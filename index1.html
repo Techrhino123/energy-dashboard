@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .weather-production {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .weather-card, .production-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .power-flow {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .power-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .power-node {
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .finpro-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .finpro-header {
+            margin-bottom: 20px;
+        }
+
+        .finpro-controls {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .env-benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .benefit-item {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .benefit-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #059669;
+        }
+
+        select, input[type="date"], button {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+        }
+
+        button {
+            cursor: pointer;
+            background: #f3f4f6;
+        }
+
+        button:hover {
+            background: #e5e7eb;
+        }
+
+        .chart-container {
+            min-height: 300px;
+            position: relative;
+        }
+
+        .tariff-select {
+            min-width: 300px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="Commercial Demo Site" style="border: none; background: none; outline: none;">
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <button>Optimize</button>
+                <button>Simulate</button>
+                <button>Export</button>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="header">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <span style="color: #10b981;">● Active</span>
+                <span>12:55 AM</span>
+                <span>Last Updated: 12:51 AM</span>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab active">⚡ Energy</div>
+            <div class="tab">📊 Forecast</div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">868</div>
+                <div>Production</div>
+                <small>kWh</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">596</div>
+                <div>Consumption</div>
+                <small>kWh</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">54.3</div>
+                <div>Self Consumption</div>
+                <small>%</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">76.9</div>
+                <div>Self Sufficiency</div>
+                <small>%</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">138</div>
+                <div>Import</div>
+                <small>kWh</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">397</div>
+                <div>Export</div>
+                <small>kWh</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">382</div>
+                <div>Electricity Bill</div>
+                <small>USD</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">307</div>
+                <div>System Savings</div>
+                <small>USD</small>
+            </div>
+        </div>
+
+        <!-- Weather and Production -->
+        <div class="weather-production">
+            <div class="weather-card">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <span style="font-size: 2em;">⛅</span>
+                    <div>
+                        <h3>53°F</h3>
+                        <p>Partly Cloudy</p>
+                        <small>NNW 7.90/h, 25% Humid</small>
+                    </div>
+                </div>
+            </div>
+            <div class="production-card">
+                <h3>Live PV Production</h3>
+                <div class="stat-value">263 kW</div>
+                <small>1.3 MW Rated AC</small>
+            </div>
+        </div>
+
+        <!-- Power Flow -->
+        <div class="power-flow">
+            <h2>Power Flow</h2>
+            <div class="power-grid">
+                <div class="power-node">
+                    <span style="font-size: 2em;">☀️</span>
+                    <div>Solar Panel</div>
+                    <div>263 kW</div>
+                </div>
+                <div class="power-node">
+                    <span style="font-size: 2em;">🏭</span>
+                    <div>Grid</div>
+                    <div>15.8 kW</div>
+                </div>
+                <div class="power-node">
+                    <span style="font-size: 2em;">🔋</span>
+                    <div>Battery</div>
+                    <div>54% Charged</div>
+                </div>
+                <div class="power-node">
+                    <span style="font-size: 2em;">🏢</span>
+                    <div>Building</div>
+                    <div>155 kW</div>
+                </div>
+                <div class="power-node">
+                    <span style="font-size: 2em;">🚗</span>
+                    <div>EV Charging</div>
+                    <div>31.4 kW</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FinPro Section -->
+        <div class="finpro-section">
+            <div class="finpro-header">
+                <h2>Financial Overview</h2>
+                <div class="finpro-controls">
+                    <div class="control-group">
+                        <label>Plant Tariff:</label>
+                        <select class="tariff-select">
+                            <option>CityPowerToUTariff2023</option>
+                            <option>De Zalze Winelands Golf Estate</option>
+                            <option>Eskom Megaflex LV</option>
+                            <option>Eskom MiniFlex Non-Local Auth</option>
+                            <option>Tariff C - Industrial - 230/400 OffPeak</option>
+                            <option>Extra Low Voltage Time of Use Tariff Scale C1V, 31X and previous 31 TOU</option>
+                        </select>
+                        <button>Change Tariff</button>
+                    </div>
+                    <div class="control-group">
+                        <div>
+                            <label>From:</label>
+                            <input type="date" value="2025-01-01">
+                        </div>
+                        <div>
+                            <label>To:</label>
+                            <input type="date" value="2025-01-27">
+                        </div>
+                        <select>
+                            <option>Monthly</option>
+                            <option>Weekly</option>
+                            <option>Daily</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="finproChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Energy Distribution -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Energy Sources</h3>
+                <div class="chart-container">
+                    <canvas id="sourcesChart"></canvas>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <strong>868 kWh</strong>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Energy Destinations</h3>
+                <div class="chart-container">
+                    <canvas id="destinationsChart"></canvas>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <strong>370 kWh</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environmental Benefits -->
+        <div class="env-benefits">
+            <div class="benefit-item">
+                <span style="font-size: 2em;">🏭</span>
+                <div class="benefit-value">6,488</div>
+                <div>Tons of CO₂ Saved</div>
+            </div>
+            <div class="benefit-item">
+                <span style="font-size: 2em;">🌳</span>
+                <div class="benefit-value">19,330</div>
+                <div>Equivalent Trees Planted</div>
+            </div>
+            <div class="benefit-item">
+                <span style="font-size: 2em;">🚗</span>
+                <div class="benefit-value">21,500</div>
+                <div>Miles Driven on Sunshine</div>
+            </div>
+        </div>
+
+        <!-- Distribution Chart -->
+        <div class="chart-card">
+            <div class="chart-container">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Energy Sources Donut Chart
+        const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+        new Chart(sourcesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['PV', 'Grid', 'Storage'],
+                datasets: [{
+                    data: [64.4, 616.28, 182.28],
+                    backgroundColor: ['#60A5FA', '#F59E0B', '#10B981']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Energy Destinations Donut Chart
+        const destinationsCtx = document.getElementById('destinationsChart').getContext('2d');
+        new Chart(destinationsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['HVAC', 'Lighting', 'Refrigeration', 'Others'],
+                datasets: [{
+                   data: [103, 111, 63, 93],
+                    backgroundColor: ['#60A5FA', '#8B5CF6', '#EC4899', '#10B981']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Distribution Chart
+        const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+        new Chart(distributionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                datasets: [{
+                    label: 'To Grid',
+                    data: [100, 150, 200, 250, 300, 250, 200, 150],
+                    backgroundColor: '#10B981'
+                }, {
+                    label: 'To Building',
+                    data: [50, 100, 150, 200, 250, 200, 150, 100],
+                    backgroundColor: '#60A5FA'
+                }, {
+                    label: 'To Storage',
+                    data: [25, 50, 75, 100, 125, 100, 75, 50],
+                    backgroundColor: '#F59E0B'
+                }, {
+                    label: 'To EVs',
+                    data: [10, 20, 30, 40, 50, 40, 30, 20],
+                    backgroundColor: '#EC4899'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // FinPro Chart
+        const finproCtx = document.getElementById('finproChart').getContext('2d');
+        new Chart(finproCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan 2025'],
+                datasets: [
+                    {
+                        label: 'Production (kWh)',
+                        data: [35000],
+                        backgroundColor: '#22C55E'
+                    },
+                    {
+                        label: 'Consumption (kWh)',
+                        data: [70000],
+                        backgroundColor: '#EF4444'
+                    },
+                    {
+                        label: 'Export (kWh)',
+                        data: [3000],
+                        backgroundColor: '#3B82F6'
+                    },
+                    {
+                        label: 'Import (kWh)',
+                        data: [38000],
+                        backgroundColor: '#F97316'
+                    },
+                    {
+                        label: 'Charge (kWh)',
+                        data: [15000],
+                        backgroundColor: '#A855F7'
+                    },
+                    {
+                        label: 'Discharge (kWh)',
+                        data: [12000],
+                        backgroundColor: '#EAB308'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'kWh'
+                        },
+                        max: 80000
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                barPercentage: 0.8,
+                categoryPercentage: 0.9
+            }
+        });
+    </script>
+</body>
+</html>
